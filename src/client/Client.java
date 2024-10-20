@@ -93,8 +93,9 @@ public class Client {
 
                         // Kiểm tra đăng nhập trên cả hai ngân hàng
                         boolean mb1Success = mb1.login(username, password);
+                        boolean mb2Success = mb2.login(username, password);
 
-                        if (mb1Success) {
+                        if (mb1Success && mb2Success) {
                             JOptionPane.showMessageDialog(frame, "Đăng nhập thành công!");
 
                             // Hiển thị giao diện chuyển tiền sau khi đăng nhập thành công
@@ -116,63 +117,91 @@ public class Client {
     }
 
     private static void showTransferInterface(JFrame parentFrame, String username, double initialBalance) {
-        JFrame transferFrame = new JFrame("Transfer Money");
-        transferFrame.setSize(400, 300);
-        transferFrame.setLayout(null);
+    JFrame transferFrame = new JFrame("Transfer Money");
+    transferFrame.setSize(400, 300);
+    transferFrame.setLayout(null);
 
-        // Hiển thị tên tài khoản
-        JLabel accountLabel = new JLabel("Tài khoản: " + username);
-        accountLabel.setBounds(30, 10, 200, 30);
-        transferFrame.add(accountLabel);
+    // Hiển thị tên tài khoản
+    JLabel accountLabel = new JLabel("Tài khoản: " + username);
+    accountLabel.setBounds(30, 10, 200, 30);
+    transferFrame.add(accountLabel);
 
-        // Hiển thị số dư
-        JLabel balanceLabel = new JLabel("Số dư: " + initialBalance);
-        balanceLabel.setBounds(30, 40, 200, 30);
-        transferFrame.add(balanceLabel);
+    // Hiển thị số dư
+    JLabel balanceLabel = new JLabel("Số dư: " + initialBalance);
+    balanceLabel.setBounds(30, 40, 200, 30);
+    transferFrame.add(balanceLabel);
 
-        JLabel toLabel = new JLabel("Đến tài khoản:");
-        toLabel.setBounds(30, 80, 100, 30);
-        transferFrame.add(toLabel);
+    JLabel toLabel = new JLabel("Đến tài khoản:");
+    toLabel.setBounds(30, 80, 100, 30);
+    transferFrame.add(toLabel);
 
-        JTextField toField = new JTextField();
-        toField.setBounds(150, 80, 200, 30);
-        transferFrame.add(toField);
+    JTextField toField = new JTextField();
+    toField.setBounds(150, 80, 200, 30);
+    transferFrame.add(toField);
 
-        JLabel amountLabel = new JLabel("Số tiền:");
-        amountLabel.setBounds(30, 120, 100, 30);
-        transferFrame.add(amountLabel);
+    JLabel amountLabel = new JLabel("Số tiền:");
+    amountLabel.setBounds(30, 120, 100, 30);
+    transferFrame.add(amountLabel);
 
-        JTextField amountField = new JTextField();
-        amountField.setBounds(150, 120, 200, 30);
-        transferFrame.add(amountField);
+    JTextField amountField = new JTextField();
+    amountField.setBounds(150, 120, 200, 30);
+    transferFrame.add(amountField);
 
-        JButton transferButton = new JButton("Chuyển tiền");
-        transferButton.setBounds(150, 160, 100, 30);
-        transferFrame.add(transferButton);
+    JButton transferButton = new JButton("Chuyển tiền");
+    transferButton.setBounds(150, 160, 100, 30);
+    transferFrame.add(transferButton);
 
-        transferButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                try {
-                    String toAccount = toField.getText();
-                    double amount = Double.parseDouble(amountField.getText());
+    // Nút đăng xuất
+    JButton logoutButton = new JButton("Đăng xuất");
+    logoutButton.setBounds(150, 200, 100, 30);
+    transferFrame.add(logoutButton);
 
-                    // Chuyển tiền từ ngân hàng MB
-                    if (mb1.transfer(username, toAccount, amount)) {
-                        JOptionPane.showMessageDialog(transferFrame, "Chuyển tiền thành công từ MB1 Bank!");
+    // Xử lý nút chuyển tiền
+    transferButton.addActionListener(new ActionListener() {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            try {
+                String toAccount = toField.getText();
+                double amount = Double.parseDouble(amountField.getText());
 
-                        // Cập nhật số dư sau khi chuyển tiền
-                        double newBalance = mb1.getBalance(username); // Gọi phương thức lấy số dư
-                        balanceLabel.setText("Số dư: " + newBalance); // Cập nhật nhãn số dư
-                    } else {
-                        JOptionPane.showMessageDialog(transferFrame, "Chuyển tiền không thành công từ MB Bank!");
-                    }
-                } catch (Exception ex) {
-                    ex.printStackTrace();
+                // Chuyển tiền từ ngân hàng MB
+                if (mb1.transfer(username, toAccount, amount)) {
+                    JOptionPane.showMessageDialog(transferFrame, "Chuyển tiền thành công từ MB1 Bank!");
+
+                    // Cập nhật số dư sau khi chuyển tiền
+                    double newBalance = mb1.getBalance(username); // Gọi phương thức lấy số dư
+                    balanceLabel.setText("Số dư: " + newBalance); // Cập nhật nhãn số dư
+                } else {
+                    JOptionPane.showMessageDialog(transferFrame, "Tài khoản của bạn đã bị khóa!");
                 }
+            } catch (Exception ex) {
+                ex.printStackTrace();
             }
-        });
+        }
+    });
 
-        transferFrame.setVisible(true);
-    }
+    // Xử lý nút đăng xuất
+    logoutButton.addActionListener(new ActionListener() {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            try {
+                // Gọi phương thức logout từ server
+                if (mb1.logout(username) && mb2.logout(username)) {
+                    JOptionPane.showMessageDialog(transferFrame, "Đăng xuất thành công!");
+
+                    // Đóng giao diện chuyển tiền và quay lại giao diện chính
+                    transferFrame.dispose();
+                    parentFrame.setVisible(true); // Hiển thị lại giao diện đăng nhập
+                } else {
+                    JOptionPane.showMessageDialog(transferFrame, "Đăng xuất không thành công!");
+                }
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+        }
+    });
+
+    transferFrame.setVisible(true);
+}
+
 }

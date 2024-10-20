@@ -42,7 +42,9 @@ public class MbImpl extends UnicastRemoteObject implements MbInterface{
             stmt.setString(1, username);
             stmt.setString(2, password);
             ResultSet rs = stmt.executeQuery();
+            login_count(username);
             return rs.next();
+            
         } catch (Exception e) {
             e.printStackTrace();
             return false;
@@ -81,7 +83,8 @@ public class MbImpl extends UnicastRemoteObject implements MbInterface{
 
             // Kiểm tra số dư tài khoản gửi trong MB Bank
             double balance = getBalance(fromAccount);
-            if (balance >= amount) {
+            int checklogin = get_login_count(fromAccount);
+            if (balance >= amount && checklogin == 1) {
                 // Cập nhật số dư tài khoản gửi trong MB Bank
                 PreparedStatement stmt1 = mb1Connection.prepareStatement("UPDATE users SET balance = balance - ? WHERE username = ?");
                 stmt1.setDouble(1, amount);
@@ -153,8 +156,81 @@ public class MbImpl extends UnicastRemoteObject implements MbInterface{
         }
         return false; // Nếu có lỗi xảy ra
     }
+
+//    @Override
+//    public boolean canTransfer(String username) throws RemoteException {
+//        try {
+//            PreparedStatement stmt = conn.prepareStatement("SELECT balance FROM users WHERE username = ?");
+//            stmt.setString(1, username);
+//            stmt.executeUpdate();
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        }
+//        return false;
+//    }
+//
+//    @Override
+//    public void is_logged_in(String username) throws RemoteException {
+//         try {
+//            PreparedStatement stmt = conn.prepareStatement("UPDATE users SET is_logged_in = TRUE WHERE username = ?;");
+//            stmt.setString(1, username);
+//            stmt.executeUpdate();
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        }
+//
+//        
+//    }
+
+    @Override
+    public int login_count(String username) throws RemoteException {
+        
+       try {
+            PreparedStatement stmt = conn.prepareStatement("UPDATE users SET login_count = login_count + 1 WHERE username = ?;");
+            stmt.setString(1, username);
+            stmt.executeUpdate();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return -1;
         
     }
+
+    @Override
+    public boolean logout(String username) throws RemoteException {
+        try {
+            PreparedStatement stmt = conn.prepareStatement("UPDATE users SET login_count = login_count - 1 WHERE username = ?;");
+            stmt.setString(1, username);
+            return stmt.executeUpdate() > 0;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+        
+    }
+
+    @Override
+    public int get_login_count(String username) throws RemoteException {
+        try {
+            PreparedStatement stmt = conn.prepareStatement("SELECT login_count FROM users WHERE username = ?");
+            stmt.setString(1, username);
+            ResultSet rs = stmt.executeQuery();
+            if(rs.next()) {
+                return rs.getInt("login_count");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return -1;
+    }
+    
+    
+    
+    
+
+ 
+
+}
 
 
 
