@@ -17,8 +17,7 @@ public class ServerMain {
             Registry registry = LocateRegistry.createRegistry(1099);
             MbInterface mbbank1 = new MbImpl("mbbank1");
             registry.rebind("MB_BANK1", mbbank1);
-            MbInterface mbbank2 = new MbImpl("mbbank2");
-            registry.rebind("MB_BANK2", mbbank2);
+           
             System.out.println("Server is running....");
         } catch (Exception e) {
             e.printStackTrace();

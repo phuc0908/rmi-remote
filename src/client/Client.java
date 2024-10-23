@@ -18,9 +18,11 @@ public class Client {
 
     public static void main(String[] args) {
         try {
-            Registry registry = LocateRegistry.getRegistry("localhost", 1099);
+            Registry registry = LocateRegistry.getRegistry("192.168.2.17", 1099);
             mb1 = (MbInterface) registry.lookup("MB_BANK1");
-            mb2 = (MbInterface) registry.lookup("MB_BANK2");
+            
+            Registry registry2 = LocateRegistry.getRegistry("192.168.2.70", 1099);
+            mb2 = (MbInterface) registry2.lookup("MB_BANK2");
 
             JFrame frame = new JFrame("Bank1 Client");
             frame.setSize(400, 400);

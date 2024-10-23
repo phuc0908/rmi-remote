@@ -25,7 +25,7 @@ public class MbImpl extends UnicastRemoteObject implements MbInterface{
     @Override
     public boolean register(String username, String password) throws RemoteException {
        try {
-            PreparedStatement stmt = conn.prepareStatement("INSERT INTO users(username, password, balance) VALUES (?, ?, 100000)");
+            PreparedStatement stmt = conn.prepareStatement("INSERT INTO users(username, password, balance, login_count) VALUES (?, ?, 100000,0)");
             stmt.setString(1, username);
             stmt.setString(2, password);
             return stmt.executeUpdate() > 0;
@@ -72,19 +72,23 @@ public class MbImpl extends UnicastRemoteObject implements MbInterface{
     public boolean transfer(String fromAccount, String toAccount, double amount) throws RemoteException {
         
         Connection mb1Connection = null;
-        Connection mb2Connection = null;
 
         try {
-            mb1Connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/mbbank1", "root", "");
-            mb2Connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/mbbank2", "root", "");
+        	System.out.println("1");
+            mb1Connection = DriverManager.getConnection("jdbc:mysql://localhost/mbbank1", "root", "");
+            
+        	System.out.println("12");
+
 
             mb1Connection.setAutoCommit(false); // Bắt đầu giao dịch MB Bank
-            mb2Connection.setAutoCommit(false); // Bắt đầu giao dịch 
+            
+        	System.out.println("123");
+
 
             // Kiểm tra số dư tài khoản gửi trong MB Bank
             double balance = getBalance(fromAccount);
             int checklogin = get_login_count(fromAccount);
-            if (balance >= amount && checklogin == 1) {
+            if (balance >= amount) {
                 // Cập nhật số dư tài khoản gửi trong MB Bank
                 PreparedStatement stmt1 = mb1Connection.prepareStatement("UPDATE users SET balance = balance - ? WHERE username = ?");
                 stmt1.setDouble(1, amount);
@@ -105,55 +109,40 @@ public class MbImpl extends UnicastRemoteObject implements MbInterface{
                 stmt3.executeUpdate();
 
                
-                PreparedStatement stmt4 = mb2Connection.prepareStatement("UPDATE users SET balance = balance + ? WHERE username = ?");
-                stmt4.setDouble(1, amount);
-                stmt4.setString(2, toAccount);
-                stmt4.executeUpdate();
-
-                
-                PreparedStatement stmt5 = mb2Connection.prepareStatement("UPDATE users SET balance = balance - ? WHERE username = ?");
-                stmt5.setDouble(1, amount);
-                stmt5.setString(2, fromAccount);
-                stmt5.executeUpdate();
-
-                
-                PreparedStatement stmt6 = mb2Connection.prepareStatement("INSERT INTO transactions(from_account, to_account, amount) VALUES (?, ?, ?)");
-                stmt6.setString(1, fromAccount);
-                stmt6.setString(2, toAccount);
-                stmt6.setDouble(3, amount);
-                stmt6.executeUpdate();
+               
 
                 // Hoàn tất giao dịch
                 mb1Connection.commit();
-                mb2Connection.commit();
+            	
+
                 return true; // Chuyển tiền thành công
             } else {
+            	System.out.println("Ko du tien");
                 return false; // Không đủ tiền
             }
         } catch (Exception e) {
+        	System.out.println("catch");
             e.printStackTrace();
             try {
                 if (mb1Connection != null) {
                     mb1Connection.rollback(); // Hoàn tác MB Bank
                 }
-                if (mb2Connection != null) {
-                    mb2Connection.rollback(); // Hoàn tác Agribank
-                }
+
             } catch (Exception rollbackEx) {
                 rollbackEx.printStackTrace();
             }
         } finally {
+        	System.out.println("final");
             try {
                 if (mb1Connection != null) {
                     mb1Connection.close();
                 }
-                if (mb2Connection != null) {
-                    mb2Connection.close();
-                }
+
             } catch (Exception closeEx) {
                 closeEx.printStackTrace();
             }
         }
+        System.out.println("GGGGGGGGGGGG");
         return false; // Nếu có lỗi xảy ra
     }
 
